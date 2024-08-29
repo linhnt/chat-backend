@@ -1,38 +1,18 @@
-// src/kafka/kafka.service.ts
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Kafka, Consumer, Producer } from 'kafkajs';
+import { Injectable, OnModuleInit, Inject } from '@nestjs/common';
+import { ClientKafka } from '@nestjs/microservices';
 
 @Injectable()
 export class KafkaService implements OnModuleInit {
-  private kafka = new Kafka({
-    clientId: 'chat-app',
-    brokers: ['localhost:9092'],
-  });
-
-  private producer: Producer;
-  private consumer: Consumer;
+  constructor(
+    @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientKafka,
+  ) { }
 
   async onModuleInit() {
-    this.producer = this.kafka.producer();
-    await this.producer.connect();
-
-    this.consumer = this.kafka.consumer({ groupId: 'chat-group' });
-    await this.consumer.connect();
-    await this.consumer.subscribe({ topic: 'chat-topic', fromBeginning: true });
-
-    await this.consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        console.log({
-          value: message.value.toString(),
-        });
-      },
-    });
+    this.kafkaClient.subscribeToResponseOf('chat-topic');
+    await this.kafkaClient.connect();
   }
 
   async sendMessage(message: string) {
-    await this.producer.send({
-      topic: 'chat-topic',
-      messages: [{ value: message }],
-    });
+    await this.kafkaClient.emit('chat-topic', { message });
   }
 }

@@ -1,4 +1,3 @@
-// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { KafkaModule } from './kafka/kafka.module';
 import { ChatGateway } from './chat/chat.gateway';
